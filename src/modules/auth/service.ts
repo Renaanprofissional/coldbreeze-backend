@@ -12,7 +12,8 @@ export const AuthService = {
       data: { name, email, password: hashed },
     });
 
-    const token = generateToken(user.id);
+    // ✅ Gera token com id e email
+    const token = generateToken({ id: user.id, email: user.email });
     return { user, token };
   },
 
@@ -23,7 +24,8 @@ export const AuthService = {
     const valid = await comparePassword(password, user.password);
     if (!valid) throw new Error("Senha incorreta.");
 
-    const token = generateToken(user.id);
+    // ✅ Corrigido: também passa o email aqui
+    const token = generateToken({ id: user.id, email: user.email });
     return { user, token };
   },
 };

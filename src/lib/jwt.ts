@@ -1,13 +1,26 @@
 import jwt from "jsonwebtoken";
 import { env } from "../env/index.js";
 
-export function generateToken(userId: string) {
-  return jwt.sign({ userId }, env.JWT_SECRET, { expiresIn: "7d" });
+// Tipagem do payload do token
+interface TokenPayload {
+  id: string;
+  email: string;
 }
 
-export function verifyToken(token: string): { userId: string } | null {
+// 🔹 Gera token com id + email
+export function generateToken(user: TokenPayload) {
+  return jwt.sign(
+    { sub: user.id, email: user.email }, // 👈 inclui email
+    env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+}
+
+// 🔹 Verifica token e retorna o payload
+export function verifyToken(token: string): TokenPayload | null {
   try {
-    return jwt.verify(token, env.JWT_SECRET) as { userId: string };
+    const decoded = jwt.verify(token, env.JWT_SECRET) as jwt.JwtPayload;
+    return { id: decoded.sub as string, email: decoded.email as string };
   } catch {
     return null;
   }
