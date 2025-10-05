@@ -13,11 +13,22 @@ import { shippingRoutes } from "./modules/shipping/routes.js";
 import { orderRoutes } from "./modules/orders/routes.js";
 import { paymentRoutes } from "./modules/payments/routes.js";
 
-// 🚀 Instância principal do servidor
+import {
+  ZodTypeProvider,
+  validatorCompiler,
+  serializerCompiler,
+} from "fastify-type-provider-zod";
+
+// 🚀 Criação da instância principal do servidor
 export const app = fastify({
   logger: true,
   forceCloseConnections: true, // evita bug de "premature close"
 });
+
+// 🧩 Configura Fastify pra entender Zod
+app.setValidatorCompiler(validatorCompiler);
+app.setSerializerCompiler(serializerCompiler);
+app.withTypeProvider<ZodTypeProvider>();
 
 // 🌍 CORS — permite o frontend acessar a API
 app.register(fastifyCors, {
@@ -39,6 +50,7 @@ app.register(fastifyCookie);
 
 // 🧱 Rotas principais
 app.get("/", async () => ({ message: "Cold Breeze API online 🌬️" }));
+
 app.register(authRoutes, { prefix: "/auth" });
 app.register(productRoutes, { prefix: "/store" });
 app.register(cartRoutes, { prefix: "/cart" });
