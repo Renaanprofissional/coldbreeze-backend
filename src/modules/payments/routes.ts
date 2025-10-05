@@ -5,9 +5,9 @@ import { PaymentController } from "./controller.js";
 export async function paymentRoutes(app: FastifyInstance) {
   app.addHook("preHandler", authGuard);
 
-  // Criar checkout (autenticado)
-  app.post("/checkout", PaymentController.createCheckout);
+  // Autenticado: cria sessão de checkout
+  app.post("/checkout", { preHandler: [authGuard] }, PaymentController.createCheckout);
 
-  // Webhook do Stripe (não autenticado)
+  // Público: Stripe chama esse endpoint
   app.post("/webhook", PaymentController.webhook);
 }

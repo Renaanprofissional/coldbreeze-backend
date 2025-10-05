@@ -15,22 +15,23 @@ export const PaymentService = {
     });
 
     if (!order) throw new Error("Pedido não encontrado");
+    if (!order.items.length) throw new Error("Pedido sem itens");
 
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
       mode: "payment",
+      payment_method_types: ["card"],
       success_url: `${env.FRONTEND_URL}/success?order=${order.id}`,
       cancel_url: `${env.FRONTEND_URL}/cancel?order=${order.id}`,
       customer_email: order.user.email,
       line_items: order.items.map((item) => ({
         price_data: {
           currency: "brl",
+          unit_amount: item.priceInCents,
           product_data: {
             name: item.productVariant.product.name,
             description: item.productVariant.color,
             images: [item.productVariant.imageUrl],
           },
-          unit_amount: item.priceInCents,
         },
         quantity: item.quantity,
       })),

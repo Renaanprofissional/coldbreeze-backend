@@ -18,7 +18,7 @@ export const PaymentController = {
     let event;
     try {
       event = stripe.webhooks.constructEvent(
-        req.rawBody!,
+        (req as any).rawBody,
         sig,
         env.STRIPE_WEBHOOK_SECRET
       );
@@ -28,14 +28,15 @@ export const PaymentController = {
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as any;
-      const orderId = session.metadata.orderId;
-
-      await db.order.update({
-        where: { id: orderId },
-        data: { status: "PAID" },
-      });
+      const orderId = session.metadata?.orderId as string | undefined;
+      if (orderId) {
+        await db.order.update({
+          where: { id: orderId },
+          data: { status: "PAID" },
+        });
+      }
     }
 
-    reply.send({ received: true });
+    return reply.send({ received: true });
   },
 };
