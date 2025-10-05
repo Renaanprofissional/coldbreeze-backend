@@ -9,6 +9,7 @@ import { setupErrorHandler } from "./shared/errorHandler.js";
 import { authRoutes } from "./modules/auth/routes.js";
 import { productRoutes } from "./modules/products/routes.js";
 import { cartRoutes } from "./modules/cart/routes.js";
+import { shippingRoutes } from "./modules/shipping/routes.js";
 
 // 🚀 Instância principal do servidor
 export const app = fastify({
@@ -39,6 +40,7 @@ app.get("/", async () => ({ message: "Cold Breeze API online 🌬️" }));
 app.register(authRoutes, { prefix: "/auth" });
 app.register(productRoutes, { prefix: "/store" });
 app.register(cartRoutes, { prefix: "/cart" });
+app.register(shippingRoutes, { prefix: "/shipping" });
 
 // 🔥 Handler global de erros (centralizado)
 setupErrorHandler(app);

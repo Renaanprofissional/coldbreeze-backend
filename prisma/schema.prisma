@@ -23,6 +23,7 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   carts         Cart[]
+  shippingAddresses ShippingAddress[] 
 }
 
 model Category {
@@ -76,3 +77,21 @@ model CartItem {
   quantity        Int            @default(1)
   createdAt       DateTime       @default(now())
 }
+
+model ShippingAddress {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipient   String
+  street      String
+  number      String
+  complement  String?
+  neighborhood String
+  city        String
+  state       String
+  zipCode     String
+  phone       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
