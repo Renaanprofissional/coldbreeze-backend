@@ -1,9 +1,12 @@
-import { config } from "dotenv";
-config();
+import { z } from "zod";
+import "dotenv/config";
 
-export const env = {
-  DATABASE_URL: process.env.DATABASE_URL!,
-  JWT_SECRET: process.env.JWT_SECRET!,
-  FRONTEND_URL: process.env.FRONTEND_URL!,
-  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY!,
-};
+const envSchema = z.object({
+  DATABASE_URL: z.string().url(),
+  JWT_SECRET: z.string(),
+  FRONTEND_URL: z.string().url(),
+  STRIPE_SECRET_KEY: z.string(),
+  STRIPE_WEBHOOK_SECRET: z.string(),
+});
+
+export const env = envSchema.parse(process.env);

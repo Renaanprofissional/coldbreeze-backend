@@ -11,6 +11,7 @@ import { productRoutes } from "./modules/products/routes.js";
 import { cartRoutes } from "./modules/cart/routes.js";
 import { shippingRoutes } from "./modules/shipping/routes.js";
 import { orderRoutes } from "./modules/orders/routes.js";
+import { paymentRoutes } from "./modules/payments/routes.js";
 
 // 🚀 Instância principal do servidor
 export const app = fastify({
@@ -43,6 +44,7 @@ app.register(productRoutes, { prefix: "/store" });
 app.register(cartRoutes, { prefix: "/cart" });
 app.register(shippingRoutes, { prefix: "/shipping" });
 app.register(orderRoutes, { prefix: "/orders" });
+app.register(paymentRoutes, { prefix: "/payments" });
 
 // 🔥 Handler global de erros (centralizado)
 setupErrorHandler(app);

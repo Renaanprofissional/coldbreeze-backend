@@ -1,0 +1,42 @@
+import { stripe } from "@/lib/stripe.js";
+import { db } from "@/lib/prisma.js";
+import { env } from "@/env/index.js";
+
+export const PaymentService = {
+  async createCheckoutSession(orderId: string) {
+    const order = await db.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: {
+          include: { productVariant: { include: { product: true } } },
+        },
+        user: true,
+      },
+    });
+
+    if (!order) throw new Error("Pedido não encontrado");
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "payment",
+      success_url: `${env.FRONTEND_URL}/success?order=${order.id}`,
+      cancel_url: `${env.FRONTEND_URL}/cancel?order=${order.id}`,
+      customer_email: order.user.email,
+      line_items: order.items.map((item) => ({
+        price_data: {
+          currency: "brl",
+          product_data: {
+            name: item.productVariant.product.name,
+            description: item.productVariant.color,
+            images: [item.productVariant.imageUrl],
+          },
+          unit_amount: item.priceInCents,
+        },
+        quantity: item.quantity,
+      })),
+      metadata: { orderId: order.id },
+    });
+
+    return { url: session.url };
+  },
+};
