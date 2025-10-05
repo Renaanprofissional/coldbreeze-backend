@@ -1,0 +1,70 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+
+# Build
+dist/
+build/
+.next/
+out/
+coverage/
+.cache/
+
+# Environment
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Logs
+logs
+*.log
+*.log.*
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+
+# TypeScript
+*.tsbuildinfo
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Render / Deployment
+render.yaml
+.vercel
+.netlify
+
+# Prisma / Drizzle
+prisma/migrations/
+drizzle/*.sqlite
+drizzle/migrations/
+drizzle/*.db
+
+# Tests
+jest-cache/
+jest-html-reporters-*
+
+# Misc
+*.bak
+*.old
+*.orig
+
+/generated/prisma
