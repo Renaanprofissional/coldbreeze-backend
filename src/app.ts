@@ -10,6 +10,7 @@ import { authRoutes } from "./modules/auth/routes.js";
 import { productRoutes } from "./modules/products/routes.js";
 import { cartRoutes } from "./modules/cart/routes.js";
 import { shippingRoutes } from "./modules/shipping/routes.js";
+import { orderRoutes } from "./modules/orders/routes.js";
 
 // 🚀 Instância principal do servidor
 export const app = fastify({
@@ -41,6 +42,7 @@ app.register(authRoutes, { prefix: "/auth" });
 app.register(productRoutes, { prefix: "/store" });
 app.register(cartRoutes, { prefix: "/cart" });
 app.register(shippingRoutes, { prefix: "/shipping" });
+app.register(orderRoutes, { prefix: "/orders" });
 
 // 🔥 Handler global de erros (centralizado)
 setupErrorHandler(app);

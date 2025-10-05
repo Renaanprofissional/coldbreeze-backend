@@ -23,7 +23,8 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   carts         Cart[]
-  shippingAddresses ShippingAddress[] 
+  shippingAddresses ShippingAddress[]
+  orders             Order[] 
 }
 
 model Category {
@@ -56,6 +57,7 @@ model ProductVariant {
   imageUrl     String
   createdAt    DateTime  @default(now())
   cartItems    CartItem[]
+  orderItems    OrderItem[]
 }
 
 model Cart {
@@ -81,6 +83,7 @@ model CartItem {
 model ShippingAddress {
   id          String   @id @default(uuid())
   userId      String
+  orders       Order[]
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   recipient   String
   street      String
@@ -94,4 +97,34 @@ model ShippingAddress {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELED
+}
+
+model Order {
+  id              String          @id @default(uuid())
+  userId          String
+  user            User            @relation(fields: [userId], references: [id])
+  shippingId      String
+  shippingAddress ShippingAddress @relation(fields: [shippingId], references: [id])
+  totalPrice      Int
+  status          OrderStatus     @default(PENDING)
+  items           OrderItem[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model OrderItem {
+  id              String          @id @default(uuid())
+  orderId         String
+  order           Order           @relation(fields: [orderId], references: [id])
+  productVariantId String
+  productVariant  ProductVariant  @relation(fields: [productVariantId], references: [id])
+  quantity        Int
+  priceInCents    Int
+}
+
 
