@@ -6,6 +6,7 @@ import fastifyCompress from "@fastify/compress";
 import fastifyCookie from "@fastify/cookie";
 import { env } from "./env/index.js";
 import { setupErrorHandler } from "./shared/errorHandler.js";
+import { authRoutes } from "./modules/auth/routes.js"; // 👈 IMPORT AQUI
 
 export const app = fastify({ logger: true });
 
@@ -18,8 +19,11 @@ app.register(fastifyRateLimit, { max: 100, timeWindow: "1 minute" });
 app.register(fastifyCompress);
 app.register(fastifyCookie);
 
-// 🚀 Rotas básicas
+// 🚀 Rotas públicas
 app.get("/", async () => ({ message: "Cold Breeze API online 🌬️" }));
+
+// 🧩 Rotas de autenticação
+app.register(authRoutes, { prefix: "/auth" });
 
 // 🔥 Handler global de erros
 setupErrorHandler(app);
