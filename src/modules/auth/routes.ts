@@ -6,7 +6,7 @@ export async function authRoutes(app: FastifyInstance) {
   app.post("/register", AuthController.register);
   app.post("/login", AuthController.login);
   app.post("/logout", AuthController.logout);
-  app.get("/me", async (req, reply) => {
+  app.get("/teste", async (req, reply) => {
     try {
       const token = req.cookies.token;
       if (!token) return reply.status(401).send({ message: "Não autenticado" });
