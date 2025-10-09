@@ -30,9 +30,11 @@ app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
 app.withTypeProvider<ZodTypeProvider>();
 
-// 🌍 CORS — permite o frontend acessar a API
+// 🌍 CORS — permite o frontend acessar a API (versão corrigida e suficiente)
 app.register(fastifyCors, {
-  origin: [env.FRONTEND_URL],
+  origin: [env.FRONTEND_URL || "http://localhost:5173"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 });
 
