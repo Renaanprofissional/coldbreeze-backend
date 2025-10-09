@@ -8,4 +8,8 @@ export async function orderRoutes(app: FastifyInstance) {
   app.get("/", OrderController.list);
   app.get("/:id", OrderController.get);
   app.post("/", OrderController.create);
+
+  // 🧊 Novas rotas de gerenciamento:
+  app.patch("/:id/cancel", OrderController.cancel);
+  app.delete("/:id", OrderController.remove);
 }

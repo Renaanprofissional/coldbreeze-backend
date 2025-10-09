@@ -5,9 +5,7 @@ export const OrderService = {
     return db.order.findMany({
       where: { userId },
       include: {
-        items: {
-          include: { productVariant: { include: { product: true } } },
-        },
+        items: { include: { productVariant: { include: { product: true } } } },
         shippingAddress: true,
       },
       orderBy: { createdAt: "desc" },
@@ -18,16 +16,13 @@ export const OrderService = {
     return db.order.findFirst({
       where: { id, userId },
       include: {
-        items: {
-          include: { productVariant: { include: { product: true } } },
-        },
+        items: { include: { productVariant: { include: { product: true } } } },
         shippingAddress: true,
       },
     });
   },
 
   async create(userId: string, shippingId: string) {
-    // 1️⃣ busca carrinho do usuário
     const cart = await db.cart.findUnique({
       where: { userId },
       include: { items: { include: { productVariant: true } } },
@@ -37,13 +32,11 @@ export const OrderService = {
       throw new Error("Carrinho vazio");
     }
 
-    // 2️⃣ calcula total
     const totalPrice = cart.items.reduce(
       (acc, item) => acc + item.productVariant.priceInCents * item.quantity,
       0
     );
 
-    // 3️⃣ cria o pedido
     const order = await db.order.create({
       data: {
         userId,
@@ -60,9 +53,31 @@ export const OrderService = {
       include: { items: true, shippingAddress: true },
     });
 
-    // 4️⃣ limpa o carrinho
     await db.cartItem.deleteMany({ where: { cartId: cart.id } });
 
     return order;
+  },
+
+  // 🧊 Cancelar pedido
+  async cancel(userId: string, id: string) {
+    const order = await db.order.findFirst({ where: { id, userId } });
+    if (!order) return null;
+
+    if (order.status === "CANCELED") return order;
+
+    return db.order.update({
+      where: { id },
+      data: { status: "CANCELED" },
+    });
+  },
+
+  // ❌ Excluir pedido
+  async remove(userId: string, id: string) {
+    const order = await db.order.findFirst({ where: { id, userId } });
+    if (!order) return false;
+
+    await db.orderItem.deleteMany({ where: { orderId: id } });
+    await db.order.delete({ where: { id } });
+    return true;
   },
 };
