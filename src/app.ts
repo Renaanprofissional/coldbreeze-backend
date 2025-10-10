@@ -3,9 +3,11 @@ import fastifyCors from "@fastify/cors";
 import fastifyHelmet from "@fastify/helmet";
 import fastifyRateLimit from "@fastify/rate-limit";
 import fastifyCookie from "@fastify/cookie";
+import rawBody from "fastify-raw-body"; // ⚡ necessário pro Stripe Webhook
 
 import { env } from "./env/index.js";
 import { setupErrorHandler } from "./shared/errorHandler.js";
+
 import { authRoutes } from "./modules/auth/routes.js";
 import { productRoutes } from "./modules/products/routes.js";
 import { cartRoutes } from "./modules/cart/routes.js";
@@ -30,7 +32,13 @@ app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
 app.withTypeProvider<ZodTypeProvider>();
 
-// 🌍 CORS — permite o frontend acessar a API (versão corrigida e suficiente)
+// ⚙️ Plugin pra habilitar corpo bruto (Stripe precisa disso)
+app.register(rawBody, {
+  field: "rawBody", // onde o corpo cru será armazenado
+  global: false,    // só ativaremos em rotas específicas
+});
+
+// 🌍 CORS — permite o frontend acessar a API
 app.register(fastifyCors, {
   origin: [env.FRONTEND_URL || "http://localhost:5173"],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
