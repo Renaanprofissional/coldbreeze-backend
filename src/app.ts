@@ -4,7 +4,7 @@ import fastifyHelmet from "@fastify/helmet";
 import fastifyRateLimit from "@fastify/rate-limit";
 import fastifyCookie from "@fastify/cookie";
 import rawBody from "fastify-raw-body"; // ⚡ necessário pro Stripe Webhook
-
+import { distanceRoutes } from "./modules/distance/routes.js";
 import { env } from "./env/index.js";
 import { setupErrorHandler } from "./shared/errorHandler.js";
 
@@ -79,6 +79,7 @@ app.register(cartRoutes, { prefix: "/cart" });
 app.register(shippingRoutes, { prefix: "/shipping" });
 app.register(orderRoutes, { prefix: "/orders" });
 app.register(paymentRoutes, { prefix: "/payments" });
+app.register(distanceRoutes);
 
 // 🔥 Handler global de erros (centralizado)
 setupErrorHandler(app);

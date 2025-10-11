@@ -37,6 +37,7 @@
     "fastify-type-provider-zod": "^6.0.0",
     "jsonwebtoken": "^9.0.2",
     "module-alias": "^2.2.3",
+    "node-fetch": "^3.3.2",
     "stripe": "^19.1.0",
     "zod": "^4.1.11"
   },
