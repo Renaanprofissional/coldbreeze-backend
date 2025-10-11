@@ -40,11 +40,23 @@ app.register(rawBody, {
 
 // 🌍 CORS — permite o frontend acessar a API
 app.register(fastifyCors, {
-  origin: [env.FRONTEND_URL || "http://localhost:5173"],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  origin: (origin, cb) => {
+    const allowedOrigins = [
+      env.FRONTEND_URL || "http://localhost:5173",
+      "https://coldbreeze.vercel.app",
+    ];
+
+    if (!origin || allowedOrigins.includes(origin)) {
+      cb(null, true); // ✅ permite a requisição
+    } else {
+      cb(new Error("Origin not allowed"), false);
+    }
+  },
+  methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 });
+
 
 // 🧠 Segurança básica (protege headers)
 app.register(fastifyHelmet);
