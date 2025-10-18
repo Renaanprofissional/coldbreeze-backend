@@ -35,32 +35,34 @@ app.withTypeProvider<ZodTypeProvider>();
 
 // ⚙️ Plugin pra habilitar corpo bruto (Stripe precisa disso)
 app.register(rawBody, {
-  field: "rawBody", // onde o corpo cru será armazenado
-  global: false, // só ativaremos em rotas específicas
+  field: "rawBody",
+  global: false,
 });
 
-// 🌍 CORS — permite o frontend acessar a API
+// 🌍 CORS — libera frontend local, produção e webhooks
 app.register(fastifyCors, {
   origin: (origin, cb) => {
     const allowedOrigins = [
-      "http://localhost:5173", // ambiente local
-      "https://coldbreeze.vercel.app", // antigo domínio (Vercel)
-      "https://coldbreeze-store.vercel.app", // fallback
-      "https://coldbreeze.com.br", // 🌎 novo domínio oficial
-      env.FRONTEND_URL, // variável de ambiente (Render)
-    ].filter(Boolean); // remove undefined
+      "http://localhost:5173", // local dev
+      "https://coldbreeze.vercel.app",
+      "https://coldbreeze-store.vercel.app",
+      "https://coldbreeze.com.br",
+      "https://coldbreeze-frontend.vercel.app", // novo domínio Vercel
+      env.FRONTEND_URL, // variável de ambiente no Render
+    ].filter(Boolean);
 
-    // 🔹 Permite requests sem Origin (ex: SSR, Postman, Stripe Webhook)
+    // 🔹 Permite requests sem origin (ex: SSR, Postman, Stripe)
     if (!origin) {
       cb(null, true);
       return;
     }
 
-    // 🔹 Permite se o origin começar com algum domínio permitido
-    if (allowedOrigins.some((o) => origin.startsWith(o))) {
+    // 🔹 Verifica se o origin é permitido
+    const isAllowed = allowedOrigins.some((o) => origin.startsWith(o));
+    if (isAllowed) {
       cb(null, true);
     } else {
-      console.error(`🚫 CORS bloqueado: ${origin}`);
+      console.warn(`🚫 Bloqueado por CORS: ${origin}`);
       cb(new Error("Origin not allowed"), false);
     }
   },
@@ -69,10 +71,12 @@ app.register(fastifyCors, {
   credentials: true,
 });
 
-// 🧠 Segurança básica (protege headers)
-app.register(fastifyHelmet);
+// 🧠 Segurança básica
+app.register(fastifyHelmet, {
+  crossOriginResourcePolicy: false, // ✅ permite imagens externas
+});
 
-// 🚦 Limita requisições pra evitar spam
+// 🚦 Rate limit básico
 app.register(fastifyRateLimit, {
   max: 100,
   timeWindow: "1 minute",
@@ -93,5 +97,5 @@ app.register(paymentRoutes, { prefix: "/payments" });
 app.register(couponRoutes, { prefix: "/coupons" });
 app.register(distanceRoutes);
 
-// 🔥 Handler global de erros (centralizado)
+// 🔥 Handler global de erros
 setupErrorHandler(app);
