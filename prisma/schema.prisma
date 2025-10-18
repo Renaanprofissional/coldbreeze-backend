@@ -111,6 +111,7 @@ model Order {
   shippingId      String
   shippingAddress ShippingAddress @relation(fields: [shippingId], references: [id])
   totalPrice      Int
+  shippingPrice   Int? 
   status          OrderStatus     @default(PENDING)
   items           OrderItem[]
   createdAt       DateTime        @default(now())
