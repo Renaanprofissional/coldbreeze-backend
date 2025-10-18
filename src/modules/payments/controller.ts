@@ -40,7 +40,7 @@ export const PaymentController = {
     }
   },
 
-  // ✅ 2. Cria sessão Stripe com cupom e frete incluído
+  // ✅ 2. Cria sessão Stripe com cupom e frete incluído (com desconto aplicado)
   async createCheckout(req: FastifyRequest, reply: FastifyReply) {
     const user = req.user!;
     const { orderId, coupon } = req.body as { orderId: string; coupon?: string };
@@ -62,10 +62,11 @@ export const PaymentController = {
     const shippingCents = order.shippingPrice ?? 0;
 
     let discountCents = 0;
+    let dbCoupon = null;
 
     // 🎟️ Aplica cupom, se houver
     if (coupon) {
-      const dbCoupon = await db.coupon.findFirst({
+      dbCoupon = await db.coupon.findFirst({
         where: {
           code: { equals: coupon, mode: "insensitive" },
           active: true,
@@ -103,35 +104,46 @@ export const PaymentController = {
       }
     }
 
-    // 🔹 Total final
-    const totalCents = subtotalCents + shippingCents - discountCents;
+    // 🔹 Calcula desconto proporcional (para aplicar sobre os produtos)
+    const descontoProporcional =
+      subtotalCents > 0 ? discountCents / subtotalCents : 0;
 
-    // 🧾 Monta itens do Stripe
-    const lineItems = [
-      ...order.items.map((item) => ({
+    // 🧾 Monta itens do Stripe com preços ajustados
+    const lineItems = order.items.map((item) => {
+      const precoComDesconto = Math.round(
+        item.priceInCents * (1 - descontoProporcional)
+      );
+
+      return {
         price_data: {
           currency: "brl",
           product_data: {
             name: item.productVariant.name,
-            images: [item.productVariant.imageUrl],
+            images: [item.productVariant.imageUrl], // ✅ Corrigido: sempre incluir images
           },
-          unit_amount: item.priceInCents,
+          unit_amount: precoComDesconto,
         },
         quantity: item.quantity,
-      })),
-      ...(shippingCents > 0
-        ? [
-            {
-              price_data: {
-                currency: "brl",
-                product_data: { name: "Frete" },
-                unit_amount: shippingCents,
-              },
-              quantity: 1,
-            },
-          ]
-        : []),
-    ];
+      };
+    });
+
+    // ➕ Adiciona frete como item separado (corrigido com images obrigatórias)
+    if (shippingCents > 0) {
+      lineItems.push({
+        price_data: {
+          currency: "brl",
+          product_data: {
+            name: "Frete",
+            images: [], // ✅ Campo obrigatório no Stripe
+          },
+          unit_amount: shippingCents,
+        },
+        quantity: 1,
+      });
+    }
+
+    // 🔹 Total final (apenas para log)
+    const totalCents = subtotalCents + shippingCents - discountCents;
 
     // 🚀 Cria sessão Stripe
     const session = await stripe.checkout.sessions.create({
