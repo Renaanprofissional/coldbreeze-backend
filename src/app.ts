@@ -7,7 +7,7 @@ import rawBody from "fastify-raw-body"; // ⚡ necessário pro Stripe Webhook
 import { distanceRoutes } from "./modules/distance/routes.js";
 import { env } from "./env/index.js";
 import { setupErrorHandler } from "./shared/errorHandler.js";
-
+import { couponRoutes } from "@/modules/cupons/routes.js";
 import { authRoutes } from "./modules/auth/routes.js";
 import { productRoutes } from "./modules/products/routes.js";
 import { cartRoutes } from "./modules/cart/routes.js";
@@ -79,6 +79,7 @@ app.register(cartRoutes, { prefix: "/cart" });
 app.register(shippingRoutes, { prefix: "/shipping" });
 app.register(orderRoutes, { prefix: "/orders" });
 app.register(paymentRoutes, { prefix: "/payments" });
+app.register(couponRoutes, { prefix: "/coupons" });
 app.register(distanceRoutes);
 
 // 🔥 Handler global de erros (centralizado)

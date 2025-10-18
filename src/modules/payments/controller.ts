@@ -40,10 +40,10 @@ export const PaymentController = {
     }
   },
 
-  // ✅ 2. Cria sessão Stripe com frete incluído
+  // ✅ 2. Cria sessão Stripe com cupom e frete incluído
   async createCheckout(req: FastifyRequest, reply: FastifyReply) {
     const user = req.user!;
-    const { orderId } = req.body as { orderId: string };
+    const { orderId, coupon } = req.body as { orderId: string; coupon?: string };
 
     // 🔍 Busca pedido e itens
     const order = await db.order.findUnique({
@@ -60,9 +60,53 @@ export const PaymentController = {
       0
     );
     const shippingCents = order.shippingPrice ?? 0;
-    const totalCents = subtotalCents + shippingCents;
 
-    // 🧾 Monta os itens do Stripe
+    let discountCents = 0;
+
+    // 🎟️ Aplica cupom, se houver
+    if (coupon) {
+      const dbCoupon = await db.coupon.findFirst({
+        where: {
+          code: { equals: coupon, mode: "insensitive" },
+          active: true,
+        },
+      });
+
+      if (dbCoupon) {
+        if (dbCoupon.discountType === "PERCENT") {
+          discountCents = Math.round(
+            (subtotalCents * dbCoupon.discountValue) / 100
+          );
+        } else if (dbCoupon.discountType === "FIXED") {
+          discountCents = dbCoupon.discountValue;
+        }
+
+        // 🔒 Garante que o desconto não passe do valor total
+        if (discountCents > subtotalCents) discountCents = subtotalCents;
+
+        // 💾 Atualiza o pedido com desconto e cupom usado
+        await db.order.update({
+          where: { id: order.id },
+          data: {
+            couponId: dbCoupon.id,
+            discountAppliedInCents: discountCents,
+          },
+        });
+
+        console.log(
+          `🎟️ Cupom ${dbCoupon.code} aplicado: -R$${(
+            discountCents / 100
+          ).toFixed(2)}`
+        );
+      } else {
+        console.warn(`⚠️ Cupom ${coupon} inválido ou inativo`);
+      }
+    }
+
+    // 🔹 Total final
+    const totalCents = subtotalCents + shippingCents - discountCents;
+
+    // 🧾 Monta itens do Stripe
     const lineItems = [
       ...order.items.map((item) => ({
         price_data: {
@@ -94,13 +138,19 @@ export const PaymentController = {
       mode: "payment",
       payment_method_types: ["card"],
       line_items: lineItems,
-      metadata: { orderId: order.id },
+      metadata: {
+        orderId: order.id,
+        coupon: coupon || "none",
+        discount: discountCents,
+      },
       success_url: `${env.FRONTEND_URL}/success`,
       cancel_url: `${env.FRONTEND_URL}/orders`,
     });
 
     console.log(
-      `💰 Sessão Stripe criada: R$ ${(totalCents / 100).toFixed(2)}`
+      `💰 Sessão Stripe criada: R$ ${(totalCents / 100).toFixed(2)}${
+        coupon ? ` (com cupom ${coupon})` : ""
+      }`
     );
 
     return reply.send({ url: session.url });
