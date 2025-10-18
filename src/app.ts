@@ -4,6 +4,7 @@ import fastifyHelmet from "@fastify/helmet";
 import fastifyRateLimit from "@fastify/rate-limit";
 import fastifyCookie from "@fastify/cookie";
 import rawBody from "fastify-raw-body"; // ⚡ necessário pro Stripe Webhook
+
 import { distanceRoutes } from "./modules/distance/routes.js";
 import { env } from "./env/index.js";
 import { setupErrorHandler } from "./shared/errorHandler.js";
@@ -35,20 +36,31 @@ app.withTypeProvider<ZodTypeProvider>();
 // ⚙️ Plugin pra habilitar corpo bruto (Stripe precisa disso)
 app.register(rawBody, {
   field: "rawBody", // onde o corpo cru será armazenado
-  global: false,    // só ativaremos em rotas específicas
+  global: false, // só ativaremos em rotas específicas
 });
 
 // 🌍 CORS — permite o frontend acessar a API
 app.register(fastifyCors, {
   origin: (origin, cb) => {
     const allowedOrigins = [
-      env.FRONTEND_URL || "http://localhost:5173",
-      "https://coldbreeze.vercel.app",
-    ];
+      "http://localhost:5173", // ambiente local
+      "https://coldbreeze.vercel.app", // antigo domínio (Vercel)
+      "https://coldbreeze-store.vercel.app", // fallback
+      "https://coldbreeze.com.br", // 🌎 novo domínio oficial
+      env.FRONTEND_URL, // variável de ambiente (Render)
+    ].filter(Boolean); // remove undefined
 
-    if (!origin || allowedOrigins.includes(origin)) {
-      cb(null, true); // ✅ permite a requisição
+    // 🔹 Permite requests sem Origin (ex: SSR, Postman, Stripe Webhook)
+    if (!origin) {
+      cb(null, true);
+      return;
+    }
+
+    // 🔹 Permite se o origin começar com algum domínio permitido
+    if (allowedOrigins.some((o) => origin.startsWith(o))) {
+      cb(null, true);
     } else {
+      console.error(`🚫 CORS bloqueado: ${origin}`);
       cb(new Error("Origin not allowed"), false);
     }
   },
@@ -56,7 +68,6 @@ app.register(fastifyCors, {
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 });
-
 
 // 🧠 Segurança básica (protege headers)
 app.register(fastifyHelmet);
