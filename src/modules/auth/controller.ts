@@ -7,34 +7,39 @@ export const AuthController = {
     const data = registerSchema.parse(req.body);
     const result = await AuthService.register(data.name, data.email, data.password);
 
-    reply.setCookie("token", result.token, {
-      httpOnly: true,
-      path: "/",
-      maxAge: 7 * 24 * 60 * 60,
-      secure: true,
-      sameSite: "lax",
-    });
-
-    reply.send({ user: result.user });
+    reply
+      .setCookie("token", result.token, {
+        httpOnly: true,
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60, // 7 dias
+        sameSite: "none", // ✅ precisa ser none para funcionar com domínios diferentes
+        secure: true,     // ✅ obrigatório em produção (HTTPS)
+      })
+      .send({ user: result.user });
   },
 
   async login(req: FastifyRequest, reply: FastifyReply) {
     const data = loginSchema.parse(req.body);
     const result = await AuthService.login(data.email, data.password);
 
-    reply.setCookie("token", result.token, {
-      httpOnly: true,
-      path: "/",
-      maxAge: 7 * 24 * 60 * 60,
-      secure: true,
-      sameSite: "lax",
-    });
-
-    reply.send({ user: result.user });
+    reply
+      .setCookie("token", result.token, {
+        httpOnly: true,
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60,
+        sameSite: "none", // ✅
+        secure: true,     // ✅
+      })
+      .send({ user: result.user });
   },
 
   async logout(_req: FastifyRequest, reply: FastifyReply) {
-    reply.clearCookie("token", { path: "/" });
+    reply.clearCookie("token", {
+      path: "/",
+      sameSite: "none", // ✅ garante remoção correta
+      secure: true,
+    });
+
     reply.send({ message: "Logout realizado com sucesso" });
   },
 };
