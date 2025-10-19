@@ -22,68 +22,67 @@ import {
   serializerCompiler,
 } from "fastify-type-provider-zod";
 
-// 🚀 Criação da instância principal do servidor
+// 🚀 Instância principal do servidor
 export const app = fastify({
   logger: true,
-  forceCloseConnections: true, // evita bug de "premature close"
+  forceCloseConnections: true,
 });
 
-// 🧩 Configura Fastify pra entender Zod
+// 🧩 Configura Fastify + Zod
 app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
 app.withTypeProvider<ZodTypeProvider>();
 
-// ⚙️ Plugin pra habilitar corpo bruto (Stripe precisa disso)
+// ⚙️ Corpo bruto (Stripe precisa disso)
 app.register(rawBody, {
   field: "rawBody",
   global: false,
 });
 
-// 🌍 CORS — libera frontend local, produção e webhooks
+// 🌍 CORS — essencial pra autenticação cross-domain
 app.register(fastifyCors, {
   origin: (origin, cb) => {
     const allowedOrigins = [
-      "http://localhost:5173", // local dev
+      "http://localhost:5173", // dev local
       "https://coldbreeze.vercel.app",
       "https://coldbreeze-store.vercel.app",
       "https://coldbreeze.com.br",
-      "https://coldbreeze-frontend.vercel.app", // novo domínio Vercel
-      env.FRONTEND_URL, // variável de ambiente no Render
+      "https://coldbreeze-frontend.vercel.app",
+      env.FRONTEND_URL, // variável opcional no Render
     ].filter(Boolean);
 
-    // 🔹 Permite requests sem origin (ex: SSR, Postman, Stripe)
-    if (!origin) {
-      cb(null, true);
-      return;
-    }
+    if (!origin) return cb(null, true); // SSR, Postman, Stripe etc.
 
-    // 🔹 Verifica se o origin é permitido
     const isAllowed = allowedOrigins.some((o) => origin.startsWith(o));
-    if (isAllowed) {
-      cb(null, true);
-    } else {
-      console.warn(`🚫 Bloqueado por CORS: ${origin}`);
+    if (isAllowed) cb(null, true);
+    else {
+      console.warn(`🚫 CORS bloqueado: ${origin}`);
       cb(new Error("Origin not allowed"), false);
     }
   },
   methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
+  credentials: true, // ✅ permite cookies cross-domain
 });
 
 // 🧠 Segurança básica
 app.register(fastifyHelmet, {
   crossOriginResourcePolicy: false, // ✅ permite imagens externas
+  crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
 });
 
-// 🚦 Rate limit básico
+// 🚦 Limite de requisições
 app.register(fastifyRateLimit, {
   max: 100,
   timeWindow: "1 minute",
 });
 
 // 🍪 Cookies e autenticação
-app.register(fastifyCookie);
+app.register(fastifyCookie, {
+  secret: env.COOKIE_SECRET || "coldbreeze_secret",
+  hook: "onRequest",
+});
 
 // 🧱 Rotas principais
 app.get("/", async () => ({ message: "Cold Breeze API online 🌬️" }));
