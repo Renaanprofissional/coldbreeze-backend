@@ -1,3 +1,7 @@
+// ===============================
+// 🌬️ Cold Breeze — app.ts corrigido
+// ===============================
+
 import fastify from "fastify";
 import fastifyCors from "@fastify/cors";
 import fastifyHelmet from "@fastify/helmet";
@@ -39,37 +43,28 @@ app.register(rawBody, {
   global: false,
 });
 
-// 🌍 CORS — essencial pra autenticação cross-domain
+// 🌍 CORS — essencial pra autenticação cross-domain (mobile + desktop)
 app.register(fastifyCors, {
-  origin: (origin, cb) => {
-    const allowedOrigins = [
-      "http://localhost:5173", // dev local
-      "https://coldbreeze.vercel.app",
-      "https://coldbreeze-store.vercel.app",
-      "https://coldbreeze.com.br",
-      "https://coldbreeze-frontend.vercel.app",
-      env.FRONTEND_URL, // variável opcional no Render
-    ].filter(Boolean);
-
-    if (!origin) return cb(null, true); // SSR, Postman, Stripe etc.
-
-    const isAllowed = allowedOrigins.some((o) => origin.startsWith(o));
-    if (isAllowed) cb(null, true);
-    else {
-      console.warn(`🚫 CORS bloqueado: ${origin}`);
-      cb(new Error("Origin not allowed"), false);
-    }
-  },
+  origin: [
+    "http://localhost:5173", // dev local
+    "https://coldbreeze.vercel.app",
+    "https://coldbreeze-store.vercel.app",
+    "https://coldbreeze-frontend.vercel.app",
+    "https://coldbreeze.com.br",          // domínio oficial HostGator
+    "https://www.coldbreeze.com.br",
+    env.FRONTEND_URL,                     // variável no Render
+  ].filter(Boolean),
+  credentials: true, // ✅ permite cookies cross-domain
   methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true, // ✅ permite cookies cross-domain
 });
 
-// 🧠 Segurança básica
+// 🧠 Helmet — segurança ajustada (sem bloquear cookies cross-domain)
 app.register(fastifyHelmet, {
-  crossOriginResourcePolicy: false, // ✅ permite imagens externas
   crossOriginEmbedderPolicy: false,
-  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+  crossOriginOpenerPolicy: false,
+  crossOriginResourcePolicy: false, // ⚡ evita bloqueio de cookies em mobile
+  contentSecurityPolicy: false,     // opcional (libera imagens e iframes externos)
 });
 
 // 🚦 Limite de requisições
@@ -78,10 +73,14 @@ app.register(fastifyRateLimit, {
   timeWindow: "1 minute",
 });
 
-// 🍪 Cookies e autenticação
+// 🍪 Cookies — configurados corretamente para mobile e cross-domain
 app.register(fastifyCookie, {
   secret: env.COOKIE_SECRET || "coldbreeze_secret",
   hook: "onRequest",
+  parseOptions: {
+    sameSite: "none", // ✅ necessário pra cross-domain (mobile)
+    secure: true,     // ✅ obrigatório em HTTPS (Render + HostGator)
+  },
 });
 
 // 🧱 Rotas principais
