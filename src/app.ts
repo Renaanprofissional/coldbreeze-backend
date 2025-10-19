@@ -1,5 +1,5 @@
 // ===============================
-// 🌬️ Cold Breeze — app.ts corrigido
+// 🌬️ Cold Breeze — app.ts FINAL
 // ===============================
 
 import fastify from "fastify";
@@ -43,28 +43,31 @@ app.register(rawBody, {
   global: false,
 });
 
-// 🌍 CORS — essencial pra autenticação cross-domain (mobile + desktop)
+// 🌍 CORS — totalmente liberado entre frontend e backend (com HTTPS)
 app.register(fastifyCors, {
   origin: [
     "http://localhost:5173", // dev local
-    "https://coldbreeze.vercel.app",
-    "https://coldbreeze-store.vercel.app",
-    "https://coldbreeze-frontend.vercel.app",
-    "https://coldbreeze.com.br",          // domínio oficial HostGator
+    "https://coldbreeze.com.br", // domínio oficial (HostGator)
     "https://www.coldbreeze.com.br",
-    env.FRONTEND_URL,                     // variável no Render
-  ].filter(Boolean),
-  credentials: true, // ✅ permite cookies cross-domain
+    "https://coldbreeze-backend.onrender.com", // backend (para requisições diretas)
+  ],
+  credentials: true, // ✅ necessário para cookies cross-domain
   methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
+});
+
+// 🧩 Hook adicional — garante header necessário para mobile (Safari/Chrome)
+app.addHook("onSend", async (req, reply, payload) => {
+  reply.header("Access-Control-Allow-Credentials", "true");
+  return payload;
 });
 
 // 🧠 Helmet — segurança ajustada (sem bloquear cookies cross-domain)
 app.register(fastifyHelmet, {
   crossOriginEmbedderPolicy: false,
   crossOriginOpenerPolicy: false,
-  crossOriginResourcePolicy: false, // ⚡ evita bloqueio de cookies em mobile
-  contentSecurityPolicy: false,     // opcional (libera imagens e iframes externos)
+  crossOriginResourcePolicy: false, // ⚡ evita bloqueio de cookies
+  contentSecurityPolicy: false, // opcional (permite imagens externas)
 });
 
 // 🚦 Limite de requisições
@@ -73,13 +76,13 @@ app.register(fastifyRateLimit, {
   timeWindow: "1 minute",
 });
 
-// 🍪 Cookies — configurados corretamente para mobile e cross-domain
+// 🍪 Cookies — configurados para mobile + cross-domain
 app.register(fastifyCookie, {
   secret: env.COOKIE_SECRET || "coldbreeze_secret",
   hook: "onRequest",
   parseOptions: {
-    sameSite: "none", // ✅ necessário pra cross-domain (mobile)
-    secure: true,     // ✅ obrigatório em HTTPS (Render + HostGator)
+    sameSite: "none", // ✅ necessário pra cross-domain
+    secure: true,     // ✅ obrigatório em HTTPS
   },
 });
 

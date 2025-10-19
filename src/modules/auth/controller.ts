@@ -5,15 +5,20 @@ import { registerSchema, loginSchema } from "./schemas.js";
 export const AuthController = {
   async register(req: FastifyRequest, reply: FastifyReply) {
     const data = registerSchema.parse(req.body);
-    const result = await AuthService.register(data.name, data.email, data.password);
+    const result = await AuthService.register(
+      data.name,
+      data.email,
+      data.password
+    );
 
     reply
       .setCookie("token", result.token, {
         httpOnly: true,
         path: "/",
         maxAge: 7 * 24 * 60 * 60, // 7 dias
-        sameSite: "none", // ✅ precisa ser none para funcionar com domínios diferentes
-        secure: true,     // ✅ obrigatório em produção (HTTPS)
+        sameSite: "none", // ✅ cross-domain
+        secure: true, // ✅ HTTPS obrigatório
+        domain: ".coldbreeze.com.br", // ✅ funciona com e sem www
       })
       .send({ user: result.user });
   },
@@ -28,7 +33,7 @@ export const AuthController = {
         path: "/",
         maxAge: 7 * 24 * 60 * 60,
         sameSite: "none", // ✅
-        secure: true,     // ✅
+        secure: true, // ✅
       })
       .send({ user: result.user });
   },
